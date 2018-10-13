@@ -208,9 +208,14 @@ class FeedlyClient(object):
     
     def get_entry_content(self, entryId):
         request__url = self._get_endpoint("v3/entries/" + entryId)
-        res = requests.get(url=request__url)
-        return res.json()
+        res = requests.get(url=request__url).json()
+        return res
     
+    def get_entries_content(self, entryId):
+        request__url = self._get_endpoint("v3/entries/" + ".mget")
+        res = requests.post(url=request__url, data=json.dumps(entryId)).json()
+        return res
+
     def get_user_read(self, access_token, newerThan=None):
         headers = {'Authorization': 'OAuth ' + access_token}
         request__url = self._get_endpoint("v3/markers/reads")
