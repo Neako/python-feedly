@@ -2,9 +2,8 @@
 # For reference: https://developer.feedly.com/v3/
 
 import json
-
 import requests
-
+import warnings
 
 def json_fetch(url, method, params={}, data={}, headers={}):
     response = requests.request(method, url,
@@ -12,7 +11,6 @@ def json_fetch(url, method, params={}, data={}, headers={}):
                                 data=json.dumps(data),
                                 headers=headers)
     return response.json()
-
 
 class FeedlyClient(object):
     ## INIT
@@ -38,7 +36,6 @@ class FeedlyClient(object):
             'markers': '/v3/markers',
             'entries': '/v3/entries'
         }
-
 
     ## USER PROFILE & SUBSCRIPTIONS
     def get_user_profile(self, access_token):
@@ -212,11 +209,22 @@ class FeedlyClient(object):
         return res
     
     def get_entries_content(self, entryId):
+        """Get data for all hashes in entryId.
+        Note: API call is limited to 1000 hashes.
+        """
         request__url = self._get_endpoint("v3/entries/" + ".mget")
+        if len(entryId) > 1000:
+            warnings.warn('This API call is limited to 1000 ids. Input will be restricted.')
+            entryId = entryId[0:1000]
         res = requests.post(url=request__url, data=json.dumps(entryId)).json()
         return res
 
     def get_user_read(self, access_token, newerThan=None):
+        """Get latest read operations. Default for API calls is 30 days.
+
+        Input:
+            newerThan: timestamp in ms (optional, default None)
+        """
         headers = {'Authorization': 'OAuth ' + access_token}
         request__url = self._get_endpoint("v3/markers/reads")
         params={}
@@ -224,7 +232,6 @@ class FeedlyClient(object):
             params['newerThan'] = newerThan
         res = requests.get(url=request__url, data=params, headers=headers)
         return res.json()
-
 
     # Categories
     def get_categories(self, access_token):
@@ -265,7 +272,6 @@ class FeedlyClient(object):
         request__url = self._get_endpoint("v3/categories/" + categoryId)
         res = requests.delete(url=request__url, headers=headers)
         return res
-
 
     # User preferences
     def get_user_preferences(self, access_token):
@@ -310,7 +316,6 @@ class FeedlyClient(object):
         res = requests.post(url=request__url, data=json.dumps(params), headers=headers)
         return res
     
-
     ## GENERAL
     def _get_endpoint(self, path=None):
         """
